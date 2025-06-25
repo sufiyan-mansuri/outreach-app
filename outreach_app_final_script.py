@@ -48,16 +48,13 @@ Subscribers: {subscribers}
 
     body = response.choices[0].message.content.strip()
 
-    # Normalize spacing
+    # Normalize paragraph spacing
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
     body_clean = "\n\n".join(paragraphs)
 
-    # Final footer
-    footer = """
-Best,<br>
-Aimaan<br>
-<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>
-"""
+    # Clean footer (no leading/trailing space issues)
+    footer = 'Best,<br>Aimaan<br><a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
+
     final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
     return final_body
 
@@ -71,6 +68,7 @@ if st.button("🚀 Start Sending Emails"):
         df = pd.read_csv(uploaded_file)
         yag = yagmail.SMTP(gmail_user, gmail_app_password)
         sent_count = 0
+        status_placeholder = st.empty()
 
         for idx, row in df.iterrows():
             email = row.get("email") or row.get("Email")
@@ -79,19 +77,19 @@ if st.button("🚀 Start Sending Emails"):
             subscribers = row.get("Subscribers") or "unknown"
 
             if not email or "@" not in str(email):
-                st.warning(f"⚠️ Skipping row {idx} — invalid email.")
+                status_placeholder.warning(f"⚠️ Skipping row {idx} — invalid email.")
                 continue
 
             try:
                 email_content = generate_email(channel_name, about_us, subscribers, openai_api_key)
                 subject = f"Let's work on something for {channel_name}"
                 yag.send(to=email, subject=subject, contents=[email_content])
-                st.success(f"✅ Sent to {email}")
+                status_placeholder.success(f"✅ Sent to {email}")
                 sent_count += 1
                 time.sleep(random.randint(40, 90))
 
             except Exception as e:
-                st.error(f"❌ Failed to send to {email}: {e}")
+                status_placeholder.error(f"❌ Failed to send to {email}: {e}")
 
         st.info(f"🎉 Finished — {sent_count} emails sent!")
 
