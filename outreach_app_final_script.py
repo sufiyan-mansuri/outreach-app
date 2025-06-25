@@ -32,7 +32,7 @@ You're a professional video editor named Aimaan reaching out to YouTube creators
 
 Generate a short, casual outreach email body based on this info. Structure it into exactly 3 paragraphs:
 
-1. Compliment the creator's content based on their traits (see list below).
+1. Directly compliment the creator's content using specific traits provided in the list (e.g. "uploads weekly tutorials", "uses animations for clarity").
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
