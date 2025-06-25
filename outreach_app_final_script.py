@@ -53,13 +53,13 @@ Subscribers: {subscribers}
     body_clean = "\n\n".join(paragraphs)
 
     # Signature (no space above, no space between)
-    signature = (
-        "Best,<br>"
-        "Aimaan<br>"
-        '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
-    )
+    footer = """
+        Best,
+        Aimaan
+        <a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>
+    """
 
-    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + signature
+    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
     return final_body
 
 # --- Email Sending ---
