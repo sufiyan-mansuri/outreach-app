@@ -3,7 +3,7 @@ import pandas as pd
 import yagmail
 import time
 import random
-import openai
+from openai import OpenAI
 
 # --- UI Layout ---
 st.title("📺 YouTube Creator Outreach")
@@ -19,7 +19,7 @@ openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
 def generate_email(channel_name, about_us, subscribers, api_key):
-    openai.api_key = api_key
+    client = OpenAI(api_key=api_key)
 
     prompt = f"""
 You're a professional video editor named Aimaan reaching out to YouTube creators.
@@ -41,24 +41,23 @@ About Us: {about_us}
 Subscribers: {subscribers}
 """
 
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
 
-    body = response['choices'][0]['message']['content'].strip()
+    body = response.choices[0].message.content.strip()
 
-    # Normalize paragraph spacing to exactly 1 break
+    # Normalize spacing
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
     body_clean = "\n\n".join(paragraphs)
 
     # Final footer
     footer = """
-Best,
-Aimaan
+Best,<br>
+Aimaan<br>
 <a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>
 """
-
     final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
     return final_body
 
