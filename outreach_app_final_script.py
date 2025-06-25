@@ -19,7 +19,6 @@ openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
 def generate_email(channel_name, about_us, subscribers, api_key):
-    from openai import OpenAI
     client = OpenAI(api_key=api_key)
 
     prompt = f"""
@@ -31,11 +30,10 @@ Generate a short, casual outreach email body based on this info. Structure it in
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
-❌ Do NOT include any closing lines like "Thanks", "Regards", "Looking forward", "Hope to hear from you", etc.
-❌ Do NOT sign off with your name (Aimaan) or use "Best" or "Sincerely" — these will be removed.
-⚠️ If you include any closing or sign-off, the response will be discarded.
+❌ Do NOT include any closing line like "Looking forward..." or "Would be dope to connect."
+❌ Do NOT sign off with your name or use "Best" — leave that for the fixed footer.
 
-Just return 3 clean paragraphs. No signature, no extra empty lines.
+Just return the 3 paragraphs only.
 
 Details:
 Channel Name: {channel_name}
@@ -47,29 +45,22 @@ Subscribers: {subscribers}
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
+
     body = response.choices[0].message.content.strip()
 
-    # Split into paragraphs
+    # Normalize paragraph spacing to exactly 1 line break
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
+    body_clean = "\n\n".join(paragraphs)
 
-    # Remove trailing lines if they contain sign-offs or name
-    for _ in range(2):
-        if paragraphs and any(
-            word in paragraphs[-1].lower()
-            for word in ["thanks", "regards", "best", "sincerely", "looking forward", "aiman"]
-        ):
-            paragraphs.pop()
-
-    body_clean = "<br><br>".join(paragraphs)
-
-    # Final fixed footer
+    # Clean footer (no extra spacing)
     footer = (
-        "Best,"
-        "Aimaan"
+        "Best,<br>"
+        "Aimaan<br>"
         '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
     )
 
-    return f"{body_clean}<br><br>{footer}"
+    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
+    return final_body
 
 # --- Email Sending ---
 if st.button("🚀 Start Sending Emails"):
