@@ -6,6 +6,12 @@ import random
 from openai import OpenAI
 
 # --- UI Layout ---
+st.set_page_config(
+    page_title="YouTube Outreach Tool",  # ← This is the tab title
+    page_icon="📺",                      # ← This is the emoji favicon
+    layout="centered"
+)
+
 st.title("📺 YouTube Creator Outreach")
 
 uploaded_file = st.file_uploader("Upload your YouTube leads CSV", type=["csv"])
