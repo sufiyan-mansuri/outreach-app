@@ -19,7 +19,7 @@ openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
 def generate_email(channel_name, about_us, subscribers, api_key):
-    client = OpenAI(api_key=api_key)
+    openai.api_key = api_key
 
     prompt = f"""
 You're a professional video editor named Aimaan reaching out to YouTube creators.
@@ -30,10 +30,10 @@ Generate a short, casual outreach email body based on this info. Structure it in
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
-❌ Do NOT include any closing line like "Looking forward..." or "Would be dope to connect."
-❌ Do NOT sign off with your name or use "Best" — leave that for the fixed footer.
+❌ Do NOT include any closing line like "Thanks", "Regards", "Looking forward...", or "Would be dope to connect."
+❌ Do NOT sign off with your name — leave that for the fixed footer.
 
-Just return the 3 paragraphs only.
+Just return the 3 paragraphs only. No extra lines or signature.
 
 Details:
 Channel Name: {channel_name}
@@ -41,21 +41,25 @@ About Us: {about_us}
 Subscribers: {subscribers}
 """
 
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
 
-    body = response.choices[0].message.content.strip()
+    body = response['choices'][0]['message']['content'].strip()
 
     # Normalize paragraph spacing
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
     body_clean = "\n\n".join(paragraphs)
 
-    # Clean footer (no leading/trailing space issues)
-    footer = 'Best,<br>Aimaan<br><a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
+    # Signature (no space above, no space between)
+    signature = (
+        "Best,<br>"
+        "Aimaan<br>"
+        '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
+    )
 
-    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
+    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + signature
     return final_body
 
 # --- Email Sending ---
