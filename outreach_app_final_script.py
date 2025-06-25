@@ -18,9 +18,8 @@ st.subheader("🧠 OpenAI Settings")
 openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
-from openai import OpenAI
-
 def generate_email(channel_name, about_us, subscribers, api_key):
+    from openai import OpenAI
     client = OpenAI(api_key=api_key)
 
     prompt = f"""
@@ -32,10 +31,11 @@ Generate a short, casual outreach email body based on this info. Structure it in
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
-❌ Do NOT include any closing lines like "Thanks", "Regards", "Looking forward", or "Would be dope to connect."
-❌ Do NOT include a signature or your name — we will add that separately.
+❌ Do NOT include any closing lines like "Thanks", "Regards", "Looking forward", "Hope to hear from you", etc.
+❌ Do NOT sign off with your name (Aimaan) or use "Best" or "Sincerely" — these will be removed.
+⚠️ If you include any closing or sign-off, the response will be discarded.
 
-Just return the 3 paragraphs only. No empty lines at the end.
+Just return 3 clean paragraphs. No signature, no extra empty lines.
 
 Details:
 Channel Name: {channel_name}
@@ -43,24 +43,26 @@ About Us: {about_us}
 Subscribers: {subscribers}
 """
 
-    # Get GPT response
     response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
     body = response.choices[0].message.content.strip()
 
-    # Force clean formatting
+    # Split into paragraphs
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
 
-    # 🧼 Remove accidental closing lines (if GPT ignored prompt)
-    if paragraphs[-1].lower().startswith(("thanks", "regards", "best", "sincerely", "looking forward", "aiman")):
-        paragraphs.pop()
+    # Remove trailing lines if they contain sign-offs or name
+    for _ in range(2):
+        if paragraphs and any(
+            word in paragraphs[-1].lower()
+            for word in ["thanks", "regards", "best", "sincerely", "looking forward", "aiman"]
+        ):
+            paragraphs.pop()
 
-    # Combine into HTML body
     body_clean = "<br><br>".join(paragraphs)
 
-    # 🔒 Clean, final fixed footer
+    # Final fixed footer
     footer = (
         "Best,<br>"
         "Aimaan<br>"
