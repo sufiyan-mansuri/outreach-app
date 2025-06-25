@@ -64,8 +64,8 @@ Subscribers: {subscribers}
 
     # Final fixed footer
     footer = (
-        "Best,<br>"
-        "Aimaan<br>"
+        "Best,"
+        "Aimaan"
         '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
     )
 
