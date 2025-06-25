@@ -18,8 +18,10 @@ st.subheader("🧠 OpenAI Settings")
 openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
+from openai import OpenAI
+
 def generate_email(channel_name, about_us, subscribers, api_key):
-    openai.api_key = api_key
+    client = OpenAI(api_key=api_key)
 
     prompt = f"""
 You're a professional video editor named Aimaan reaching out to YouTube creators.
@@ -30,10 +32,10 @@ Generate a short, casual outreach email body based on this info. Structure it in
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
-❌ Do NOT include any closing line like "Thanks", "Regards", "Looking forward...", or "Would be dope to connect."
-❌ Do NOT sign off with your name — leave that for the fixed footer.
+❌ Do NOT include any closing lines like "Thanks", "Regards", "Looking forward", or "Would be dope to connect."
+❌ Do NOT include a signature or your name — we will add that separately.
 
-Just return the 3 paragraphs only. No extra lines or signature.
+Just return the 3 paragraphs only. No empty lines at the end.
 
 Details:
 Channel Name: {channel_name}
@@ -41,26 +43,31 @@ About Us: {about_us}
 Subscribers: {subscribers}
 """
 
-    response = openai.ChatCompletion.create(
+    # Get GPT response
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}]
     )
+    body = response.choices[0].message.content.strip()
 
-    body = response['choices'][0]['message']['content'].strip()
-
-    # Normalize paragraph spacing
+    # Force clean formatting
     paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
-    body_clean = "\n\n".join(paragraphs)
 
-    # Signature (no space above, no space between)
-    footer = """
-        Best,
-        Aimaan
-        <a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>
-    """
+    # 🧼 Remove accidental closing lines (if GPT ignored prompt)
+    if paragraphs[-1].lower().startswith(("thanks", "regards", "best", "sincerely", "looking forward", "aiman")):
+        paragraphs.pop()
 
-    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
-    return final_body
+    # Combine into HTML body
+    body_clean = "<br><br>".join(paragraphs)
+
+    # 🔒 Clean, final fixed footer
+    footer = (
+        "Best,<br>"
+        "Aimaan<br>"
+        '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
+    )
+
+    return f"{body_clean}<br><br>{footer}"
 
 # --- Email Sending ---
 if st.button("🚀 Start Sending Emails"):
