@@ -7,8 +7,8 @@ from openai import OpenAI
 
 # --- UI Layout ---
 st.set_page_config(
-    page_title="YouTube Outreach Tool",  # ← This is the tab title
-    page_icon="📺",                      # ← This is the emoji favicon
+    page_title="YouTube Outreach Tool",
+    page_icon="📺",
     layout="centered"
 )
 
@@ -24,7 +24,7 @@ st.subheader("🧠 OpenAI Settings")
 openai_api_key = st.text_input("OpenAI API Key (GPT-3.5)", type="password")
 
 # --- Email Generation Function ---
-def generate_email(channel_name, about_us, subscribers, api_key):
+def generate_email(channel_name, traits, subscribers, api_key):
     client = OpenAI(api_key=api_key)
 
     prompt = f"""
@@ -32,18 +32,18 @@ You're a professional video editor named Aimaan reaching out to YouTube creators
 
 Generate a short, casual outreach email body based on this info. Structure it into exactly 3 paragraphs:
 
-1. Compliment the creator's content based on their description.
+1. Compliment the creator's content based on their traits (see list below).
 2. Introduce yourself as Aimaan, a video editor with 2B+ views.
 3. Offer to do one free edit, mention your site (aimaanedits.com), and invite collaboration.
 
 ❌ Do NOT include any closing line like "Looking forward..." or "Would be dope to connect."
-❌ Do NOT sign off with your name or use "Best" — leave that for the fixed footer.
+❌ Do NOT sign off with your name or use "Best", "Regards", "- Aimaan", etc — we will handle the footer separately.
 
 Just return the 3 paragraphs only.
 
 Details:
 Channel Name: {channel_name}
-About Us: {about_us}
+Traits: {traits}
 Subscribers: {subscribers}
 """
 
@@ -54,19 +54,21 @@ Subscribers: {subscribers}
 
     body = response.choices[0].message.content.strip()
 
-    # Normalize paragraph spacing to exactly 1 line break
-    paragraphs = [p.strip() for p in body.split("\n") if p.strip()]
-    body_clean = "\n\n".join(paragraphs)
+    # Clean up lines and remove any GPT sign-off
+    lines = [line.strip() for line in body.split("\n") if line.strip()]
+    if lines and any(x in lines[-1].lower() for x in ["aiman", "regards", "sincerely", "thanks", "- ", "~ "]):
+        lines.pop()
 
-    # Clean footer (no extra spacing)
+    body_clean = "<br><br>".join(lines)
+
+    # Footer
     footer = (
         "Best,<br>"
         "Aimaan<br>"
         '<a href="https://www.instagram.com/aimaanedits" target="_blank">Instagram</a>'
     )
 
-    final_body = body_clean.replace("\n", "<br>") + "<br><br>" + footer
-    return final_body
+    return f"{body_clean}<br><br>{footer}"
 
 # --- Email Sending ---
 if st.button("🚀 Start Sending Emails"):
@@ -83,7 +85,7 @@ if st.button("🚀 Start Sending Emails"):
         for idx, row in df.iterrows():
             email = row.get("email") or row.get("Email")
             channel_name = row.get("Channel Name") or "there"
-            about_us = row.get("About Us") or "a great creator"
+            traits = row.get("Traits") or "a great creator"
             subscribers = row.get("Subscribers") or "unknown"
 
             if not email or "@" not in str(email):
@@ -91,7 +93,7 @@ if st.button("🚀 Start Sending Emails"):
                 continue
 
             try:
-                email_content = generate_email(channel_name, about_us, subscribers, openai_api_key)
+                email_content = generate_email(channel_name, traits, subscribers, openai_api_key)
                 subject = f"Let's work on something for {channel_name}"
                 yag.send(to=email, subject=subject, contents=[email_content])
                 status_placeholder.success(f"✅ Sent to {email}")
